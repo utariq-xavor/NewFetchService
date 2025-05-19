@@ -2,6 +2,8 @@
   "name": "news-api",
   "version": "1.0.0",
   "dependencies": {
-    "rss-parser": "^3.12.0"
+    "rss-parser": "^3.12.0",
+    "cheerio": "^1.0.0-rc.12",
+    "node-fetch": "^2.6.7"
   }
 }
