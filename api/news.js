@@ -4,14 +4,17 @@ const cheerio = require("cheerio");
 
 const parser = new Parser();
 
-// Helper: scrape article content from given URL
 async function fetchFullContent(url) {
   try {
-    const res = await fetch(url, { timeout: 8000 });
+    const res = await fetch(url, {
+      timeout: 5000,
+      headers: {
+        "Accept-Encoding": "identity",
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
     const html = await res.text();
     const $ = cheerio.load(html);
-
-    // Try scraping typical article containers (fallback logic)
     const content =
       $("article").text() ||
       $('div[class*="article"]').text() ||
@@ -20,20 +23,22 @@ async function fetchFullContent(url) {
 
     return content.trim().slice(0, 1000) || "No readable content found";
   } catch (err) {
-    return "Failed to load article content";
+    return `Error fetching full content: ${err.message}`;
   }
 }
 
 module.exports = async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*"); // ✅ Allow frontend access
+  res.setHeader("Access-Control-Allow-Methods", "GET");
+
   const query = req.query.q || "PPP Pakistan";
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-PK&gl=PK&ceid=PK:en`;
 
   try {
     const feed = await parser.parseURL(url);
 
-    // Process first 5 items only to keep it fast
     const articles = await Promise.all(
-      feed.items.slice(0, 5).map(async (item) => {
+      feed.items.slice(0, 2).map(async (item) => {
         const fullContent = await fetchFullContent(item.link);
         return {
           title: item.title,
@@ -48,7 +53,11 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ query, total: articles.length, articles });
   } catch (err) {
-    console.error("News API Error:", err.message);
-    res.status(500).json({ error: "News fetch failed", message: err.message });
+    console.error("News API error:", err.message);
+    res.status(500).json({
+      error: "Failed to fetch news",
+      message: err.message,
+      timestamp: new Date().toISOString(),
+    });
   }
 };
