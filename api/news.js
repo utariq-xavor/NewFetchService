@@ -9,7 +9,6 @@ async function fetchFullContent(url) {
     const res = await fetch(url, {
       timeout: 5000,
       headers: {
-        "Accept-Encoding": "identity",
         "User-Agent": "Mozilla/5.0"
       }
     });
@@ -23,13 +22,20 @@ async function fetchFullContent(url) {
 
     return content.trim().slice(0, 1000) || "No readable content found";
   } catch (err) {
-    return `Error fetching full content: ${err.message}`;
+    return `Error: ${err.message}`;
   }
 }
 
 module.exports = async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // ✅ Allow frontend access
-  res.setHeader("Access-Control-Allow-Methods", "GET");
+  // ✅ Allow CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight OPTIONS request
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
   const query = req.query.q || "PPP Pakistan";
   const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-PK&gl=PK&ceid=PK:en`;
@@ -38,7 +44,7 @@ module.exports = async (req, res) => {
     const feed = await parser.parseURL(url);
 
     const articles = await Promise.all(
-      feed.items.slice(0, 2).map(async (item) => {
+      feed.items.slice(0, 3).map(async (item) => {
         const fullContent = await fetchFullContent(item.link);
         return {
           title: item.title,
@@ -53,11 +59,6 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ query, total: articles.length, articles });
   } catch (err) {
-    console.error("News API error:", err.message);
-    res.status(500).json({
-      error: "Failed to fetch news",
-      message: err.message,
-      timestamp: new Date().toISOString(),
-    });
+    res.status(500).json({ error: "Failed to fetch", details: err.message });
   }
 };
