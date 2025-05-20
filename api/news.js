@@ -1,22 +1,39 @@
 const Parser = require("rss-parser");
 const fetch = require("node-fetch");
-const Mercury = require("@postlight/parser");
+const cheerio = require("cheerio");
 
 const parser = new Parser();
 
+// ✅ Extract clean article body from a given URL
 async function extractArticleBody(url) {
   try {
-    const result = await Mercury.parse(url);
-    return result.content
-      ? result.content.replace(/<[^>]+>/g, "").slice(0, 5000)
-      : "No article content found.";
-  } catch (err) {
-    console.error("Mercury parsing error:", err.message);
-    return "Failed to parse article with Mercury.";
+    const response = await fetch(url, {
+      timeout: 8000,
+      headers: {
+        "User-Agent": "Mozilla/5.0", // Avoid bot detection
+      },
+    });
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    // 🧠 Try different patterns to locate readable content
+    const body =
+      $("article").text() ||
+      $('div[itemprop="articleBody"]').text() ||
+      $('div[class*="content"]').text() ||
+      $('div[class*="main"]').text() ||
+      $('div[class*="story"]').text();
+
+    return body.trim().slice(0, 5000) || "No readable article body found.";
+  } catch (error) {
+    console.error(`Error extracting article from ${url}:`, error.message);
+    return "Failed to extract article body.";
   }
 }
 
 module.exports = async (req, res) => {
+  // ✅ Add CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -40,7 +57,7 @@ module.exports = async (req, res) => {
           pubDate: item.pubDate,
           snippet: item.contentSnippet || item.content,
           source: item.creator || item.source || "Unknown",
-          fullArticle
+          fullArticle,
         };
       })
     );
