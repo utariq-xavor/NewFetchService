@@ -1,10 +1,10 @@
 const Parser = require("rss-parser");
 const fetch = require("node-fetch");
-const Mercury = require("@postlight/parser");
+const { extract } = require("@extractus/article-extractor");
 
 const parser = new Parser();
 
-// ✅ Extract real news link from Google News redirect URL
+// ✅ Extract real article URL from Google redirect
 function getActualLink(googleUrl) {
   try {
     const match = googleUrl.match(/url=([^&]+)/);
@@ -17,15 +17,15 @@ function getActualLink(googleUrl) {
   }
 }
 
-// ✅ Use Mercury Parser to get full article body
+// ✅ Use Extractus to fetch readable article content
 async function extractArticleBody(url) {
   try {
-    const result = await Mercury.parse(url);
-    return result.content
+    const result = await extract(url);
+    return result?.content
       ? result.content.replace(/<[^>]+>/g, "").slice(0, 5000)
       : "No article content found.";
   } catch (err) {
-    console.error("Mercury parse error for", url, "→", err.message);
+    console.error("Extractus error for:", url, "|", err.message);
     return "Failed to extract article body.";
   }
 }
@@ -53,7 +53,7 @@ module.exports = async (req, res) => {
 
         return {
           title: item.title,
-          link: realUrl, // ✅ Real article link
+          link: realUrl,
           pubDate: item.pubDate,
           snippet: item.contentSnippet || item.content,
           source: item.creator || item.source || "Unknown",
