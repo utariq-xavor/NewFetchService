@@ -4,7 +4,6 @@ const Mercury = require("@postlight/parser");
 
 const parser = new Parser();
 
-// ✅ Use Mercury to extract readable article content
 async function extractArticleBody(url) {
   try {
     const result = await Mercury.parse(url);
@@ -18,7 +17,6 @@ async function extractArticleBody(url) {
 }
 
 module.exports = async (req, res) => {
-  // ✅ CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -42,7 +40,7 @@ module.exports = async (req, res) => {
           pubDate: item.pubDate,
           snippet: item.contentSnippet || item.content,
           source: item.creator || item.source || "Unknown",
-          fullArticle,
+          fullArticle
         };
       })
     );
