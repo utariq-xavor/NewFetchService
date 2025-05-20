@@ -4,7 +4,7 @@ const Mercury = require("@postlight/parser");
 
 const parser = new Parser();
 
-// ✅ Extract real news site link from Google redirect URL
+// ✅ Extract real news link from Google News redirect URL
 function getActualLink(googleUrl) {
   try {
     const match = googleUrl.match(/url=([^&]+)/);
@@ -17,7 +17,7 @@ function getActualLink(googleUrl) {
   }
 }
 
-// ✅ Extract clean readable content from article
+// ✅ Use Mercury Parser to get full article body
 async function extractArticleBody(url) {
   try {
     const result = await Mercury.parse(url);
@@ -31,7 +31,7 @@ async function extractArticleBody(url) {
 }
 
 module.exports = async (req, res) => {
-  // ✅ CORS headers for frontend use
+  // ✅ Enable CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -53,7 +53,7 @@ module.exports = async (req, res) => {
 
         return {
           title: item.title,
-          link: realUrl,
+          link: realUrl, // ✅ Real article link
           pubDate: item.pubDate,
           snippet: item.contentSnippet || item.content,
           source: item.creator || item.source || "Unknown",
