@@ -1,10 +1,10 @@
 {
-"name": "new-fetch-service",
+  "name": "new-fetch-service",
   "version": "1.0.0",
   "type": "commonjs",
   "dependencies": {
     "rss-parser": "^3.12.0",
     "node-fetch": "^2.6.7",
-    "postlight/parser": "^1.2.2"
+    "@postlight/parser": "^1.2.2"
   }
 }
